@@ -19,6 +19,8 @@ import {
 import DashboardSidebar from '../components/Dashboard/DashboardSidebar';
 import DashboardMap from '../components/Dashboard/DashboardMap';
 import LoginModal from '../components/LoginModal';
+import UserMenu from '../components/UserMenu';
+import { ToastProvider } from '../components/ToastContainer';
 import { appBasename } from '../init';
 import '../styles/dashboard.css';
 
@@ -43,7 +45,6 @@ function DashboardInner() {
 
   const isAuthenticated = authStatus?.authenticated ?? false;
   const isAdmin = authStatus?.user?.isAdmin ?? false;
-  const username = authStatus?.user?.username ?? null;
 
   const defaultCenter = {
     lat: defaultMapCenterLat ?? 30.0,
@@ -81,12 +82,17 @@ function DashboardInner() {
     setSelectedSourceId(firstEnabled?.id ?? sources[0].id);
   }, [isSuccess, sources, selectedSourceId]);
 
-  // Build node-count map — selected source gets real count, others get 0
+  // Build node-count map. Each source's count comes from its /status response
+  // (added in sourceRoutes.ts), polled in parallel by useSourceStatuses. The
+  // currently-selected source uses the live `sourceData.nodes.length` so the
+  // counter updates immediately as new nodes arrive instead of waiting for the
+  // next status poll.
   const nodeCounts = new Map<string, number>(
-    sources.map((s) => [
-      s.id,
-      s.id === selectedSourceId ? sourceData.nodes.length : 0,
-    ]),
+    sources.map((s) => {
+      if (s.id === selectedSourceId) return [s.id, sourceData.nodes.length];
+      const status = statusMap.get(s.id);
+      return [s.id, status?.nodeCount ?? 0];
+    }),
   );
 
   // ----- admin actions -----
@@ -242,7 +248,7 @@ function DashboardInner() {
             </button>
           )}
           {isAuthenticated ? (
-            <span style={{ fontSize: 13, color: 'var(--ctp-subtext1)', fontWeight: 500 }}>👤 {username}</span>
+            <UserMenu />
           ) : (
             <button
               className="dashboard-signin-btn"
@@ -278,6 +284,7 @@ function DashboardInner() {
           tilesetId={mapTileset}
           customTilesets={customTilesets}
           defaultCenter={defaultCenter}
+          sourceId={selectedSourceId}
         />
       </div>
 
@@ -415,7 +422,9 @@ function DashboardInner() {
 export default function DashboardPage() {
   return (
     <SettingsProvider>
-      <DashboardInner />
+      <ToastProvider>
+        <DashboardInner />
+      </ToastProvider>
     </SettingsProvider>
   );
 }

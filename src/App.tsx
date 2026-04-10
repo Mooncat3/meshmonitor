@@ -2059,7 +2059,8 @@ function App() {
 
       while (attempts < maxAttempts) {
         try {
-          const response = await authFetch(`${baseUrl}/api/connection`);
+          const connQuery = sourceId ? `?sourceId=${encodeURIComponent(sourceId)}` : '';
+          const response = await authFetch(`${baseUrl}/api/connection${connQuery}`);
           if (response.ok) {
             const status = await response.json();
             if (status.connected) {
@@ -2139,8 +2140,13 @@ function App() {
     const urlBase = providedBaseUrl !== undefined ? providedBaseUrl : baseUrl;
 
     try {
-      // Use consolidated polling endpoint to check connection status
-      const response = await authFetch(`${urlBase}/api/poll`);
+      // Use consolidated polling endpoint to check connection status.
+      // When inside a SourceProvider (multi-source dashboard), pass sourceId
+      // so the server reads from the correct manager — otherwise the header
+      // would show the legacy singleton's status, which is "disconnected" in
+      // 4.0 multi-source mode.
+      const pollQuery = sourceId ? `?sourceId=${encodeURIComponent(sourceId)}` : '';
+      const response = await authFetch(`${urlBase}/api/poll${pollQuery}`);
       if (response.ok) {
         const pollData = await response.json();
         const status = pollData.connection;
@@ -3131,6 +3137,7 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ sourceId }),
       });
 
       if (response.ok) {
@@ -3172,6 +3179,7 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ sourceId }),
       });
 
       if (response.ok) {
@@ -3212,6 +3220,7 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ sourceId }),
       });
 
       if (response.ok) {
@@ -3249,6 +3258,7 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ sourceId }),
       });
 
       if (response.ok) {
@@ -3286,6 +3296,7 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ sourceId }),
       });
 
       if (response.ok) {
@@ -3322,6 +3333,7 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ sourceId }),
       });
 
       if (response.ok) {
@@ -3374,6 +3386,7 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ sourceId }),
       });
 
       if (response.ok) {
@@ -4821,6 +4834,7 @@ function App() {
         {activeTab === 'settings' && (
           <ErrorBoundary fallbackTitle="Settings failed to load">
           <SettingsTab
+            mode="source"
             maxNodeAgeHours={maxNodeAgeHours}
             inactiveNodeThresholdHours={inactiveNodeThresholdHours}
             inactiveNodeCheckIntervalMinutes={inactiveNodeCheckIntervalMinutes}

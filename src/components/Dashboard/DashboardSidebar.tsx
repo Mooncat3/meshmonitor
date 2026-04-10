@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { version } from '../../../package.json';
 import type { DashboardSource, SourceStatus } from '../../hooks/useDashboardData';
 
 interface DashboardSidebarProps {
@@ -151,10 +152,19 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         const nodeCount = nodeCounts.get(source.id) ?? 0;
         const isSelected = selectedSourceId === source.id;
 
+        // Show the Meshtastic logo as a faint watermark for any meshtastic-typed
+        // source. Other source types render without a watermark.
+        const isMeshtastic =
+          source.type === 'meshtastic_tcp' || source.type === 'meshtastic_mqtt';
+        const cardClassName =
+          'dashboard-source-card' +
+          (isSelected ? ' selected' : '') +
+          (isMeshtastic ? ' has-meshtastic-watermark' : '');
+
         return (
           <div
             key={source.id}
-            className={`dashboard-source-card${isSelected ? ' selected' : ''}`}
+            className={cardClassName}
             onClick={() => onSelectSource(source.id)}
             role="button"
             tabIndex={0}
@@ -166,7 +176,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               <span className="dashboard-source-card-name" title={source.name}>
                 {source.name}
               </span>
-              <span className="dashboard-source-card-badge">{source.type}</span>
+              {source.type !== 'meshtastic_tcp' && source.type !== 'meshtastic_mqtt' && (
+                <span className="dashboard-source-card-badge">{source.type}</span>
+              )}
               {(() => {
                 const vn = (source.config as any)?.virtualNode;
                 return vn?.enabled ? (
@@ -222,6 +234,46 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         >
           📡 Unified Telemetry
         </button>
+      </div>
+
+      <div className="dashboard-sidebar-footer">
+        <span className="dashboard-sidebar-version">v{version}</span>
+        <div className="dashboard-sidebar-footer-icons">
+          {isAdmin && (
+            <button
+              className="dashboard-sidebar-footer-btn"
+              title="Settings"
+              onClick={() => navigate('/settings')}
+            >
+              ⚙️
+            </button>
+          )}
+          <button
+            className="dashboard-sidebar-footer-btn"
+            title="News"
+            disabled
+          >
+            📰
+          </button>
+          <a
+            className="dashboard-sidebar-footer-btn"
+            href="https://github.com/Yeraze/meshmonitor"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="GitHub"
+          >
+            🐙
+          </a>
+          <a
+            className="dashboard-sidebar-footer-btn"
+            href="https://meshmonitor.org"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Website"
+          >
+            🔗
+          </a>
+        </div>
       </div>
     </aside>
   );
